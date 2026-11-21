@@ -10,6 +10,9 @@
         public Guid MediaItemId { get; set; }
         public MediaItem MediaItem { get; set; } = null!;
 
+        public Guid? EpisodeId { get; set; }
+        public Episode? Episode { get; set; }
+
         public DateTime LastWatchedAt { get; set; } = DateTime.UtcNow;
         public int SecondsWatched { get; set; }
         public bool IsFinished { get; set; }

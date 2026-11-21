@@ -1,6 +1,11 @@
 /.vs
 /backend/obj
 /backend/bin
+*.user
+
+.env
+.env.*
+!.env.example
 
 appsettings.Development.json
 appsettings.Local.json
@@ -23,7 +28,7 @@ dist-ssr/
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*

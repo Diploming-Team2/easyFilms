@@ -7,5 +7,6 @@ namespace backend.Controllers
     [ApiController]
     public class MediaController : ControllerBase
     {
+
     }
 }

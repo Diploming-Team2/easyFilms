@@ -1,6 +1,7 @@
-﻿namespace backend.DTO.Auth
+﻿namespace backend.DTO.Media
 {
     public class FilterParamsDto
     {
+
     }
 }

@@ -4,16 +4,16 @@ namespace backend.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class WeatherForecastController : ControllerBase
+    public class exampleController : ControllerBase
     {
         private static readonly string[] Summaries = new[]
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
 
-        private readonly ILogger<WeatherForecastController> _logger;
+        private readonly ILogger<exampleController> _logger;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        public exampleController(ILogger<exampleController> logger)
         {
             _logger = logger;
         }

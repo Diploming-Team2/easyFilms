@@ -1,6 +1,7 @@
-﻿namespace backend.DTO.Media
+﻿namespace backend.DTO.Auth
 {
     public class RegisterDto
     {
+
     }
 }

@@ -1,3 +1,6 @@
+using backend.Infrastructure;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend
 {

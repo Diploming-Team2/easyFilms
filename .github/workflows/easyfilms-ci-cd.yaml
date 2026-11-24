@@ -1,6 +1,6 @@
 # .github/workflows/easyfilms-ci-cd.yaml
 
-name: easyFilms
+name: easyFilms CI/CD pipeline
 
 on:
   push:

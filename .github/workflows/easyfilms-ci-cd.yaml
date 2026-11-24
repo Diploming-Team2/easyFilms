@@ -1,0 +1,29 @@
+# .github/workflows/easyfilms-ci-cd.yaml
+
+name: easyFilms
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build_backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Get code
+        uses: actions/checkout@v7
+
+      - name: Build docker image
+        run: docker build -f backend/Dockerfile -t easyfilms-backend:${{ github.sha }} .
+  
+  build_frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get code
+        uses: actions/checkout@v7
+
+      - name: Build docker image
+        run: docker build -f frontend/Dockerfile -t easyfilms-frontend:${{ github.sha }} .

@@ -9,17 +9,36 @@ on:
 
 env:
   IMAGE_NAME: easyfilms-test
+  AWS_REGION: eu-north-1
+  ARN_IAM_ROLE: arn:aws:iam::551174578993:role/github-actions-ecr-push
 
 jobs:
   build_backend:
     runs-on: ubuntu-latest
     
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: Get code
         uses: actions/checkout@v7
 
-      - name: Build docker image
-        run: docker build -f backend/Dockerfile -t ${{ env.IMAGE_NAME }}-backend:${{ github.sha }} .
+      - name: Login to AWS
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ env.ARN_IAM_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to AWS ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2.2.0
+
+      - name: Build and push docker image
+        run: |
+          IMAGE=${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }}
+          docker build -f backend/Dockerfile -t $IMAGE .
+          docker push $IMAGE
   
   build_frontend:
     runs-on: ubuntu-latest

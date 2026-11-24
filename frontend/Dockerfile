@@ -14,7 +14,7 @@ RUN npm ci
 # Copy the rest of the source code
 COPY /frontend/ .
 
-# Build the production bundle (TypeScript check + Vite build)
+# Build the production bundle
 RUN npm run build
 
 # ---- Stage 2: Serve ----

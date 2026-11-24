@@ -10,7 +10,6 @@ on:
 env:
   IMAGE_NAME: easyfilms-test
   AWS_REGION: eu-north-1
-  ARN_IAM_ROLE: arn:aws:iam::551174578993:role/github-actions-ecr-push
 
 jobs:
   build_backend:
@@ -27,7 +26,7 @@ jobs:
       - name: Login to AWS
         uses: aws-actions/configure-aws-credentials@v6.3.0
         with:
-          role-to-assume: ${{ env.ARN_IAM_ROLE }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to AWS ECR
@@ -54,7 +53,7 @@ jobs:
       - name: Login to AWS
         uses: aws-actions/configure-aws-credentials@v6.3.0
         with:
-          role-to-assume: ${{ env.ARN_IAM_ROLE }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to AWS ECR

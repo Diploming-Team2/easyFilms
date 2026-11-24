@@ -43,10 +43,26 @@ jobs:
   build_frontend:
     runs-on: ubuntu-latest
 
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: Get code
         uses: actions/checkout@v7
 
-      - name: Build docker image
-        run: docker build -f frontend/Dockerfile -t ${{ env.IMAGE_NAME }}-frontend:${{ github.sha }} .
+      - name: Login to AWS
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ env.ARN_IAM_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
 
+      - name: Login to AWS ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2.2.0
+
+      - name: Build and push docker image
+        run: |
+          IMAGE=${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_NAME }}-frontend:${{ github.sha }}
+          docker build -f frontend/Dockerfile -t $IMAGE .
+          docker push $IMAGE

@@ -48,8 +48,24 @@ jobs:
       - name: Build and push docker image
         run: |
           IMAGE=${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }}
+          echo "::group::Build image"
           docker build -f backend/Dockerfile -t $IMAGE .
+          echo "::endgroup::"
+          echo "::group::Push image"
           docker push $IMAGE
+          echo "::endgroup::"
+
+          # Log: which image was pushed
+          echo "Pushed image: $IMAGE"
+
+          # Summary on the run page
+          echo "### Backend image pushed :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Repository | ${{ env.IMAGE_NAME }}-backend |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tag | ${{ github.sha }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Branch | ${{ github.ref_name }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Triggered by | ${{ github.actor }} |" >> "$GITHUB_STEP_SUMMARY"
   
   # This is job to build frontend Docker image and push to AWS ECR
   build_frontend:
@@ -83,5 +99,21 @@ jobs:
       - name: Build and push docker image
         run: |
           IMAGE=${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_NAME }}-frontend:${{ github.sha }}
+          echo "::group::Build image"
           docker build -f frontend/Dockerfile -t $IMAGE .
+          echo "::endgroup::"
+          echo "::group::Push image"
           docker push $IMAGE
+          echo "::endgroup::"
+
+          # Log: which image was pushed
+          echo "Pushed image: $IMAGE"
+
+          # Summary on the run page
+          echo "### Frontend image pushed :rocket:" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Repository | ${{ env.IMAGE_NAME }}-frontend |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tag | ${{ github.sha }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Branch | ${{ github.ref_name }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Triggered by | ${{ github.actor }} |" >> "$GITHUB_STEP_SUMMARY"

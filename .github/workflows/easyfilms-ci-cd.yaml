@@ -1,65 +1,85 @@
 # .github/workflows/easyfilms-ci-cd.yaml
+# CI pipeline: builds backend and frontend Docker images
+# and pushes them to Amazon ECR (test environment).
 
 name: easyFilms CI/CD pipeline test
 
+# Run on every push to the develop branch
 on:
   push:
     branches:
       - develop
 
+# Shared values for all jobs
 env:
   IMAGE_NAME: easyfilms-test
   AWS_REGION: eu-north-1
 
 jobs:
+  # This is job to build backend Docker image and push to AWS ECR
   build_backend:
     runs-on: ubuntu-latest
     
+    # Least privilege for the GitHub token:
+    # id-token: write is required to request an OIDC token for AWS
     permissions:
       id-token: write
       contents: read
 
     steps:
+      # Each job starts on a clean machine, so the code must be fetched first
       - name: Get code
         uses: actions/checkout@v7
-
+      
+      # Authenticate to AWS with OIDC: short-lived credentials, no stored access keys
       - name: Login to AWS
         uses: aws-actions/configure-aws-credentials@v6.3.0
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-
+      
+      # Log in to the ECR registry; the step id is used to read the registry URL
       - name: Login to AWS ECR
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2.2.0
-
+      
+      # Tag = commit SHA: unique per build and traceable to the exact commit
+      # (ECR tags are immutable, so an existing tag can't be overwritten)
       - name: Build and push docker image
         run: |
           IMAGE=${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }}
           docker build -f backend/Dockerfile -t $IMAGE .
           docker push $IMAGE
   
+  # This is job to build frontend Docker image and push to AWS ECR
   build_frontend:
     runs-on: ubuntu-latest
-
+    
+    # Least privilege for the GitHub token:
+    # id-token: write is required to request an OIDC token for AWS
     permissions:
       id-token: write
       contents: read
 
     steps:
+      # Each job starts on a clean machine, so the code must be fetched first
       - name: Get code
         uses: actions/checkout@v7
-
+      
+      # Authenticate to AWS with OIDC: short-lived credentials, no stored access keys
       - name: Login to AWS
         uses: aws-actions/configure-aws-credentials@v6.3.0
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-
+      
+      # Log in to the ECR registry; the step id is used to read the registry URL
       - name: Login to AWS ECR
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2.2.0
-
+      
+      # Tag = commit SHA: unique per build and traceable to the exact commit
+      # (ECR tags are immutable, so an existing tag can't be overwritten)
       - name: Build and push docker image
         run: |
           IMAGE=${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_NAME }}-frontend:${{ github.sha }}

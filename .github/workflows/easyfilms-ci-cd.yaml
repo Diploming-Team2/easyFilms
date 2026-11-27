@@ -43,27 +43,35 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2.2.0
       
-      # Tag = commit SHA: unique per build and traceable to the exact commit
+      # Two tags for the same image:
+      #   IMAGE1 = commit SHA   -> traceable to the exact commit (used for deploys)
+      #   IMAGE2 = run number   -> human-readable, shows build order (1, 2, 3 ...)
       # (ECR tags are immutable, so an existing tag can't be overwritten)
       - name: Build and push docker image
         run: |
-          IMAGE=${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }}
+          IMAGE1=${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }}
+          IMAGE2=${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_NAME }}-backend:${{ github.run_number }}
           echo "::group::Build image"
-          docker build -f backend/Dockerfile -t $IMAGE .
+          docker build -f backend/Dockerfile -t $IMAGE1 -t $IMAGE2 .
           echo "::endgroup::"
-          echo "::group::Push image"
-          docker push $IMAGE
+          echo "::group::Push image (sha)"
+          docker push $IMAGE1
+          echo "::endgroup::"
+          echo "::group::Push image (number)"
+          docker push $IMAGE2
           echo "::endgroup::"
 
           # Log: which image was pushed
-          echo "Pushed image: $IMAGE"
+          echo "Pushed image: $IMAGE1"
+          echo "Pushed image: $IMAGE2"
 
           # Summary on the run page
           echo "### Backend image pushed :rocket:" >> "$GITHUB_STEP_SUMMARY"
           echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
           echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Repository | ${{ env.IMAGE_NAME }}-backend |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Tag | ${{ github.sha }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tag (SHA) | ${{ github.sha }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tag (number) | ${{ github.run_number }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Branch | ${{ github.ref_name }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Triggered by | ${{ github.actor }} |" >> "$GITHUB_STEP_SUMMARY"
   
@@ -94,26 +102,34 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2.2.0
       
-      # Tag = commit SHA: unique per build and traceable to the exact commit
+      # Two tags for the same image:
+      #   IMAGE1 = commit SHA   -> traceable to the exact commit (used for deploys)
+      #   IMAGE2 = run number   -> human-readable, shows build order (1, 2, 3 ...)
       # (ECR tags are immutable, so an existing tag can't be overwritten)
       - name: Build and push docker image
         run: |
-          IMAGE=${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_NAME }}-frontend:${{ github.sha }}
+          IMAGE1=${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_NAME }}-frontend:${{ github.sha }}
+          IMAGE2=${{ steps.ecr.outputs.registry }}/${{ env.IMAGE_NAME }}-frontend:${{ github.run_number }}
           echo "::group::Build image"
-          docker build -f frontend/Dockerfile -t $IMAGE .
+          docker build -f frontend/Dockerfile -t $IMAGE1 -t $IMAGE2 .
           echo "::endgroup::"
-          echo "::group::Push image"
-          docker push $IMAGE
+          echo "::group::Push image (sha)"
+          docker push $IMAGE1
+          echo "::endgroup::"
+          echo "::group::Push image (number)"
+          docker push $IMAGE2
           echo "::endgroup::"
 
           # Log: which image was pushed
-          echo "Pushed image: $IMAGE"
+          echo "Pushed image: $IMAGE1"
+          echo "Pushed image: $IMAGE2"
 
           # Summary on the run page
           echo "### Frontend image pushed :rocket:" >> "$GITHUB_STEP_SUMMARY"
           echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
           echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Repository | ${{ env.IMAGE_NAME }}-frontend |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Tag | ${{ github.sha }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tag (SHA) | ${{ github.sha }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tag (number) | ${{ github.run_number }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Branch | ${{ github.ref_name }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Triggered by | ${{ github.actor }} |" >> "$GITHUB_STEP_SUMMARY"

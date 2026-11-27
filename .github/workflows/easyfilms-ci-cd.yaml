@@ -37,7 +37,7 @@ jobs:
       - name: Login to AWS
         uses: aws-actions/configure-aws-credentials@v6.3.0
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_BUILD_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
      
       # Log in to the ECR registry; the step id is used to read the registry URL
@@ -97,7 +97,7 @@ jobs:
       - name: Login to AWS
         uses: aws-actions/configure-aws-credentials@v6.3.0
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       # Fill ${AWS_ACCOUNT_ID} in the template and build the image URI.
@@ -106,7 +106,7 @@ jobs:
         id: prep
         run: |
           AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          echo "::add-mask::$AWS_ACCOUNT_ID"     # hide account ID in logs
+          echo "::add-mask::$AWS_ACCOUNT_ID"
           export AWS_ACCOUNT_ID
 
           envsubst < deploy/ecs/test/easyfilms-test-backend.json > task-def-backend.json
@@ -155,7 +155,7 @@ jobs:
       - name: Login to AWS
         uses: aws-actions/configure-aws-credentials@v6.3.0
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_BUILD_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
       
       # Log in to the ECR registry; the step id is used to read the registry URL

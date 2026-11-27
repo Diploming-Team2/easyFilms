@@ -194,3 +194,61 @@ jobs:
           echo "| Tag (number) | ${{ github.run_number }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Branch | ${{ github.ref_name }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Triggered by | ${{ github.actor }} |" >> "$GITHUB_STEP_SUMMARY"
+  
+  # This is job to deploy frontend Docker image to AWS test environment
+  deploy_frontend:
+    needs: build_frontend
+    runs-on: ubuntu-latest
+
+    # Least privilege for the GitHub token:
+    # id-token: write is required to request an OIDC token for AWS
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      # Each job starts on a clean machine, so the code must be fetched first
+      - name: Get code
+        uses: actions/checkout@v7
+      
+      # Authenticate to AWS with OIDC: short-lived credentials, no stored access keys
+      - name: Login to AWS
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Fill ${AWS_ACCOUNT_ID} in the template and build the image URI.
+      # id: prep -> lets next steps read this step's outputs
+      - name: Prepare task definition from template
+        id: prep
+        run: |
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "::add-mask::$AWS_ACCOUNT_ID"
+          export AWS_ACCOUNT_ID
+
+          envsubst < deploy/ecs/test/easyfilms-test-frontend.json > task-def-frontend.json
+
+          # Same URI as in build job, but registry is built from account + region
+          IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.IMAGE_NAME }}-frontend:${{ github.sha }}
+
+          # Step output: available later as steps.prep.outputs.image
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          
+      # Replace "image" of container "frontend" in the JSON with the new image
+      - name: Put new image into task definition
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1.9.1
+        with:
+          task-definition: task-def-frontend.json
+          container-name: frontend
+          image: ${{ steps.prep.outputs.image }}
+
+      # Register new revision, update the service, wait until it is stable
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2.6.4
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          service: easyfilms-test-frontend-svc
+          cluster: easyfilms-test-cluster
+          wait-for-service-stability: true  

@@ -1,6 +1,8 @@
 # .github/workflows/easyfilms-ci-cd.yaml
-# CI pipeline: builds backend and frontend Docker images
-# and pushes them to Amazon ECR (test environment).
+# CI/CD pipeline: 
+#   builds backend and frontend Docker images
+#   pushes them to Amazon ECR (test environment).
+#   deploys them on AWS
 
 name: easyFilms CI/CD pipeline test
 
@@ -37,7 +39,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-      
+     
       # Log in to the ECR registry; the step id is used to read the registry URL
       - name: Login to AWS ECR
         id: ecr
@@ -75,6 +77,65 @@ jobs:
           echo "| Branch | ${{ github.ref_name }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Triggered by | ${{ github.actor }} |" >> "$GITHUB_STEP_SUMMARY"
   
+  # This is job to deploy backend Docker image to AWS test environment
+  deploy_backend:
+    needs: build_backend
+    runs-on: ubuntu-latest
+
+    # Least privilege for the GitHub token:
+    # id-token: write is required to request an OIDC token for AWS
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      # Each job starts on a clean machine, so the code must be fetched first
+      - name: Get code
+        uses: actions/checkout@v7
+      
+      # Authenticate to AWS with OIDC: short-lived credentials, no stored access keys
+      - name: Login to AWS
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Fill ${AWS_ACCOUNT_ID} in the template and build the image URI.
+      # id: prep -> lets next steps read this step's outputs
+      - name: Prepare task definition from template
+        id: prep
+        run: |
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "::add-mask::$AWS_ACCOUNT_ID"     # hide account ID in logs
+          export AWS_ACCOUNT_ID
+
+          envsubst < deploy/ecs/test/easyfilms-test-backend.json > task-def-backend.json
+
+          # Same URI as in build job, but registry is built from account + region
+          IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.IMAGE_NAME }}-backend:${{ github.sha }}
+
+          # Step output: available later as steps.prep.outputs.image
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          
+      # Replace "image" of container "backend" in the JSON with the new image
+      - name: Put new image into task definition
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1.9.1
+        with:
+          task-definition: task-def-backend.json
+          container-name: backend
+          image: ${{ steps.prep.outputs.image }}
+
+      # Register new revision, update the service, wait until it is stable
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2.6.4
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          service: easyfilms-test-backend-svc
+          cluster: easyfilms-test-cluster
+          wait-for-service-stability: true  
+
+
   # This is job to build frontend Docker image and push to AWS ECR
   build_frontend:
     runs-on: ubuntu-latest

@@ -3,7 +3,7 @@
   "containerDefinitions": [
     {
       "name": "frontend",
-      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.eu-north-1.amazonaws.com/easyfilms-test-frontend@sha256:5d58373c4f893b1147f63578c48ca0202934fb2f21409b8d064724db5fcf55bc",
+      "image": "REPLACED_BY_PIPELINE",
       "cpu": 0,
       "portMappings": [
         {

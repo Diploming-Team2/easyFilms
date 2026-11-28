@@ -6,11 +6,16 @@
 
 name: easyFilms CI/CD pipeline test
 
-# Run on every push to the develop branch
+# Run on push to develop, only when app code, deploy configs or this workflow change
 on:
   push:
     branches:
       - develop
+    paths:
+      - backend/**
+      - frontend/**
+      - deploy/**
+      - .github/workflows/easyfilms-ci-cd.yaml
 
 # Shared values for all jobs
 env:
